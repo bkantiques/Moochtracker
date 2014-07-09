@@ -1,31 +1,37 @@
 <?php
-//This is the login page
 session_start();
+
+//If logged in, send user to main page 
 if(isset($_SESSION['un']) && isset($_SESSION['userid'])) {
 header('Location: main.php');
 exit();
 }
 
-include 'databaseConnection.php';
-include 'funcs.php'; 
+//include 'databaseConnection.php';
+include 'pdotest.php';
 
-if(($_POST["un"])!=NULL && ($_POST["un"])!="" && ($_POST["pwd"])!=NULL && ($_POST["pwd"])!= "") {
-	$un = sanitize($_POST["un"]);
-	$pwd = sanitize($_POST["pwd"]);
-	$login_query = "SELECT Userid FROM Users WHERE Username='" . $un . "' AND Password='" . $pwd . "'";
-	$login_result = mysql_query($login_query);
-	$userid= mysql_fetch_array($login_result);
-	if($userid) {
-		$_SESSION['un'] = $un;
-		$_SESSION['userid'] = $userid['Userid'];
+//if username and password are posted, check if they are in database
+if(($_POST["username"] != NULL) && (trim($_POST["username"]) != "") && ($_POST["password"] != NULL) && (trim($_POST["password"]) != "")) {
+	$username = trim($_POST["username"]);
+	$password = trim($_POST["password"]);
+	$loginQuery = $db->prepare("SELECT Userid FROM Users WHERE Username=:username AND Password=:password");
+	$loginQuery->execute(array(':username' => $username, ':password' => $password));
+	if($loginQuery->rowCount() == 1) {
+		$loginResult = $loginQuery->fetchAll(PDO::FETCH_ASSOC);
+		$loginRow = $loginResult[0];
+		$userId = $loginRow["Userid"];
+		$_SESSION['un'] = $username;
+		$_SESSION['userid'] = $userId;
 		header('Location: main.php');
 		exit;
 	}
+//If they are not in database set bool for incorrect username or password
 	else
 		$incorrect = true;
 }
 
-mysql_close($link);
+//Close PDO link
+$db = null;
 ?>
 
 <html>
@@ -40,8 +46,8 @@ mysql_close($link);
 		echo "<p>Incorrect username or password</p>";
 ?>
 <form name="login" action="index.php" method="post">
-Username: <input type="text" name="un" required><br><br>
-Password: <input type="password" name="pwd" required><br><br>
+Username: <input type="text" name="username" required><br><br>
+Password: <input type="password" name="password" required><br><br>
 <input type="submit" value="Submit"><br><br>
 <br><a href="register.php">Register</a>
 </form>
