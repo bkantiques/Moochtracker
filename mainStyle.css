@@ -1,0 +1,78 @@
+td {
+	border-style: solid;
+	border-color: black;
+	border-width: thin;
+	padding-left: 2ex;
+	padding-right: 2ex;
+}
+
+#mooches {
+	width: 50ex;
+}
+
+span.moochTotal {
+	float: right;
+}
+
+table, td, th {
+	border-collapse: collapse;
+} 
+
+table {
+	border-style: solid;
+	border-color: black;
+	border-width: thin;
+}
+
+td.amount {
+	width: 20ex;
+}
+
+td.date {
+	width: 25ex;
+}
+
+td.note {
+	width: 50ex;
+}
+
+#logout {
+	float: right;
+}
+
+
+label.moochForm, input, select, form, textarea {
+	vertical-align: top;
+}
+
+#note, #addTransactionSubmit {
+	margin-left: 5ex;
+}
+
+@font-face {
+	font-family: aovelCool;
+	src: url(Aovel_Cool_Regular.ttf);
+}
+
+a {
+	color: #808080;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+header, h2 {
+	font-family: aovelCool;
+}
+
+header a {
+	font-size: 5em;
+	text-decoration: none;
+	color: black;
+}
+
+header a:hover {
+	text-decoration: none;
+}
