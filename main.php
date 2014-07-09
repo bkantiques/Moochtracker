@@ -1,37 +1,42 @@
 <?php
 session_start();
 
+//If not logged in, send user to login page
 if(!(isset($_SESSION['un']) && isset($_SESSION['userid']))) {
 header('Location: index.php');
 exit();
 }
 
 
-include 'databaseConnection.php';
+//include 'databaseConnection.php';
+include 'pdotest.php'; 
 
-include 'funcs.php'; 
-
-
-$un = $_SESSION['un'];
+$username = $_SESSION['un'];
 $userid = $_SESSION['userid'];
 
+//If post data for adding transaction is filled out, add it to database
 if(($_POST["giveOrReceive"]=="give" || $_POST["giveOrReceive"]=="receive") && is_numeric($_POST["amount"]) && is_numeric($_SESSION["MoochID"])) {
-	$giveOrReceive = sanitize($_POST["giveOrReceive"]);
-	$amount = sanitize($_POST["amount"]);
+	$giveOrReceive = $_POST["giveOrReceive"];
+	$amount = $_POST["amount"];
 	if($giveOrReceive == "receive")
 		$amount *= -1;
 	$moochID = $_SESSION["MoochID"];
-	$note = sanitize($_POST["note"]);
-	if($note != "" && $note != NULL)
-	$transactionQuery = "INSERT INTO Transactions(UserID, MoochID, Amount, DateTime, Note) VALUES ($userid, $moochID, $amount, now(), '$note')";
-	else
-	$transactionQuery = "INSERT INTO Transactions(UserID, MoochID, Amount, DateTime) VALUES ($userid, $moochID, $amount, now())";
-	mysql_query($transactionQuery);
+	$note = trim($_POST["note"]);
+	if($note != "" && $note != NULL) {
+		$transactionQuery = $db->prepare("INSERT INTO Transactions(UserID, MoochID, Amount, DateTime, Note) VALUES (:userid, :moochID, :amount, now(), :note)");
+		$transactionQuery->execute(array(':userid' => $userid, ':moochID' => $moochID, ':amount' => $amount, ':note' => $note));
+	}
+	else {
+		$transactionQuery = $db->prepare("INSERT INTO Transactions(UserID, MoochID, Amount, DateTime) VALUES (:userid, :moochID, :amount, now())");
+		$transactionQuery->execute(array(':userid' => $userid, ':moochID' => $moochID, ':amount' => $amount));
+	}
 	
 }
 
-$moochquery = "SELECT MoochID, Name FROM Mooches WHERE UserID='$userid'";
-$moochresult = mysql_query($moochquery);
+//Get name and id of user's mooches
+$moochQuery = $db->prepare("SELECT MoochID, Name FROM Mooches WHERE UserID=:userid");
+$moochQuery->execute(array(':userid' => $userid));
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -46,20 +51,24 @@ $moochresult = mysql_query($moochquery);
 <?php
 
 
-
-$moochrow = mysql_fetch_array($moochresult);
-if(!$moochrow)
+$moochResult = $moochQuery->fetchAll(PDO::FETCH_ASSOC);
+$moochRow = $moochResult[0];
+if($moochRow == null)
 	echo "<p>You have no mooches</p> \n";
 else {
 	echo "<p>Click on a mooch to view or add to transaction history</p>";
 	echo "<table id='mooches'> \n";
-	$moochbool = true;
 	$i=1;
-	while($moochbool) {
+
+	while($moochRow != null) {
+	$moochid= $moochRow["MoochID"];
+
 	//Find amount owed by or to mooch
-	$sumQuery = "SELECT SUM(Amount) FROM Transactions WHERE UserID='$userid' AND MoochID='" . $moochrow['MoochID'] . "'";
-	$sumResult = mysql_query($sumQuery);
-	$sumRow = mysql_fetch_array($sumResult);
+	$sumQuery = $db->prepare("SELECT SUM(Amount) FROM Transactions WHERE UserID=:userid AND MoochID=:moochid");
+	$sumQuery->execute(array(':userid' => $userid, ':moochid' => $moochid));
+	$sumResult = $sumQuery->fetchAll(PDO::FETCH_ASSOC);
+	
+	$sumRow = $sumResult[0];
 	$sum = 0;
 	if($sumRow)
 		$sum += $sumRow['SUM(Amount)'];
@@ -72,15 +81,16 @@ else {
 	
 	
 	//Print out mooch list
-	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onmouseover='this.style.borderWidth=\"thick\"' onmouseout='if(prevMooch!=this.id)this.style.borderWidth=\"thin\"' onclick= 'displayTransactions(" . $moochrow['MoochID'] . ", " . $userid . ", " . "\"" . $moochrow['Name'] . "\", \"mooch" . $i . "\")' ><span class='moochName'>" . $moochrow['Name'] . "</span><span class='moochTotal'>" . $sumStr . "</span></td></tr> \n";
+	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onmouseover='this.style.borderWidth=\"thick\"' onmouseout='if(prevMooch!=this.id)this.style.borderWidth=\"thin\"' onclick= 'displayTransactions(" . $moochRow['MoochID'] . ", " . "\"" . $moochRow['Name'] . "\", \"mooch" . $i . "\")' ><span class='moochName'>" . $moochRow['Name'] . "</span><span class='moochTotal'>" . $sumStr . "</span></td></tr> \n";
+	
+	$moochRow = $moochResult[$i];
 	$i = $i + 1;
-	$moochrow = mysql_fetch_array($moochresult);
-	if(!$moochrow) 
-		$moochbool = false;
 	}
 	echo "</table> \n";
 }
-mysql_close($link);
+
+//Close database link
+$db = null;
 ?>
 <br>
 <a href="addmooch.php">Add a mooch</a>
@@ -103,10 +113,10 @@ mysql_close($link);
 	var prevMooch = null;
 	
 	//mooch onclick function
-	function displayTransactions(x , y, z, moochNum) {
+	function displayTransactions(x , z, moochNum) {
 	xmlhttp.open("POST", "moochInfo.php", true);
 	xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xmlhttp.send("MoochID=" + x + "&UserID=" + y + "&MoochName=" + z);
+	xmlhttp.send("MoochID=" + x + "&UserID=" + <?php echo $userid; ?> + "&MoochName=" + z);
 	
 	
 	if(prevMooch != null)
