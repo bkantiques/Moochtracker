@@ -1,64 +1,56 @@
 <?php
 session_start();
 
+//Check if already logged in
 if(isset($_SESSION['un']) && isset($_SESSION['userid'])) {
 header('Location: main.php');
 exit();
 }
 
-include 'databaseConnection.php';
+//Include 'databaseConnection.php';
+include 'pdotest.php';
 
-include 'funcs.php';
+//Check if username is taken
+if(($_POST["username"] != NULL) && (trim($_POST["username"]) != "") && ($_POST["password"] != NULL) && (trim($_POST["password"]) != "" )) {
+$username = trim($_POST["username"]);
+$usernameQuery= $db->prepare("SELECT Username FROM Users WHERE Username=:username");
+$usernameQuery->execute(array(':username' => $username));
 
-if(($_POST["username"] != NULL) && (trim($_POST["username"]) != "")) {
-$un = sanitize($_POST["username"]);
-$unquery="SELECT COUNT(Username) FROM Users WHERE Username='$un'";
-$unresult = mysql_query($unquery);
+$usersWithUsername= $usernameQuery->rowCount();
 
-$row=mysql_fetch_array($unresult);
-$userswithusername= $row['COUNT(Username)'];
-
-
-if($userswithusername > 0) {
+//If taken, set bool to print error message later
+if($usersWithUsername > 0) {
 	$unTaken = true;
 }
 
-else if($userswithusername == 0) {
+//Otherwise insert username and password into database
+else if($usersWithUsername == 0) {
+$password = trim($_POST["password"]);
+$insertQuery= $db->prepare("INSERT INTO Users (Username, Password) VALUES (:username, :password)");
+$insertQuery->execute(array(':username' => $username, ':password' => $password));
 
-
-$pw = sanitize($_POST["password"]);
-$sql="INSERT INTO Users (Username, Password) VALUES ('$un', '$pw')";
-
-$result = mysql_query($sql);
-
-// Check result
-// This shows the actual query sent to MySQL, and the error. Useful for debugging.
-if (!$result) {
-    $message  = 'Invalid query: ' . mysql_error() . "\n";
-    $message .= 'Whole query: ' . $query;
-    die($message);
-		}
-else {
-	$useridquery = "SELECT Userid FROM Users WHERE Username='$un'";
-	$useridresult = mysql_query($useridquery);
-	$useridrow = mysql_fetch_array($useridresult);
-	$userid = $useridrow['Userid'];
-	$_SESSION['userid'] = $userid;
-	$_SESSION['un'] = $un;
+//Get user id   
+	$userIdQuery = $db->prepare("SELECT Userid FROM Users WHERE Username=:username");
+	$userIdQuery->execute(array(':username' => $username));
+	$userIdResult = $userIdQuery->fetchAll(PDO::FETCH_ASSOC);
+	$userIdRow = $userIdResult[0];
+	$userId = $userIdRow["Userid"];
 	
-	header('Location: main.php');
-	echo "problem2";
-	exit();
-		}	
+//Store id and username in session
+	$_SESSION['userid'] = $userId;
+	$_SESSION['un'] = $username;
 
-	}
+//Send user to main page	
+	header('Location: main.php');
+	exit();
+	}	
+
 }
 
+//If username and password are not set in post, set bool to print message later
 else {
 	$noInfo = true;
 }
-mysql_close($link);
-
 ?>
 <html>
 <head>
@@ -68,8 +60,10 @@ mysql_close($link);
 <body>
 <header><a href="main.php">Moochtracker</a></header>
 <?php
+//Message if username is taken
 if($unTaken)
 	echo "<p>Username taken. Please try another username.</p>";
+//Message if nothing sent in post
 else if($noInfo)
 	echo "<p>Please enter registration information</p>";
 ?>
@@ -78,6 +72,5 @@ Username: <input type="text" name="username" required><br><br>
 Password: <input type="password" name="password" required><br><br>
 <input type="submit" value="Submit"><br>
 </form>
-
 </body>
 </html>
