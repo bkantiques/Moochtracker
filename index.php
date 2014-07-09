@@ -1,4 +1,5 @@
 <?php
+//This is the login page
 session_start();
 if(isset($_SESSION['un']) && isset($_SESSION['userid'])) {
 header('Location: main.php');
