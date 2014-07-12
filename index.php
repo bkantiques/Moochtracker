@@ -7,23 +7,28 @@ header('Location: main.php');
 exit();
 }
 
-//include 'databaseConnection.php';
-include 'pdotest.php';
+include 'databaseConnection.php';
 
 //if username and password are posted, check if they are in database
 if(($_POST["username"] != NULL) && (trim($_POST["username"]) != "") && ($_POST["password"] != NULL) && (trim($_POST["password"]) != "")) {
 	$username = trim($_POST["username"]);
 	$password = trim($_POST["password"]);
-	$loginQuery = $db->prepare("SELECT Userid FROM Users WHERE Username=:username AND Password=:password");
-	$loginQuery->execute(array(':username' => $username, ':password' => $password));
-	if($loginQuery->rowCount() == 1) {
-		$loginResult = $loginQuery->fetchAll(PDO::FETCH_ASSOC);
-		$loginRow = $loginResult[0];
-		$userId = $loginRow["Userid"];
-		$_SESSION['un'] = $username;
-		$_SESSION['userid'] = $userId;
-		header('Location: main.php');
-		exit;
+	$loginQuery = $db->prepare("SELECT Userid, PasswordHash FROM Users WHERE Username=:username");
+	$loginQuery->execute(array(':username' => $username));
+	$loginResult = $loginQuery->fetchAll(PDO::FETCH_ASSOC);
+	$loginRow = $loginResult[0];
+	
+	if($loginRow != NULL) {
+		$passwordHash = $loginRow['PasswordHash'];
+		if(password_verify($password, $passwordHash)) {
+			$userId = $loginRow["Userid"];
+			$_SESSION['un'] = $username;
+			$_SESSION['userid'] = $userId;
+			header('Location: main.php');
+			exit;
+		}
+		else
+			$incorrect = true;
 	}
 //If they are not in database set bool for incorrect username or password
 	else
