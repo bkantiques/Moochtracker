@@ -7,8 +7,8 @@ header('Location: main.php');
 exit();
 }
 
-//Include 'databaseConnection.php';
-include 'pdotest.php';
+include 'databaseConnection.php';
+
 
 //Check if username is taken
 if(($_POST["username"] != NULL) && (trim($_POST["username"]) != "") && ($_POST["password"] != NULL) && (trim($_POST["password"]) != "" )) {
@@ -26,8 +26,9 @@ if($usersWithUsername > 0) {
 //Otherwise insert username and password into database
 else if($usersWithUsername == 0) {
 $password = trim($_POST["password"]);
-$insertQuery= $db->prepare("INSERT INTO Users (Username, Password) VALUES (:username, :password)");
-$insertQuery->execute(array(':username' => $username, ':password' => $password));
+$passwordHash = password_hash($password, PASSWORD_DEFAULT);
+$insertQuery= $db->prepare("INSERT INTO Users (Username, PasswordHash) VALUES (:username, :passwordHash)");
+$insertQuery->execute(array(':username' => $username, ':passwordHash' => $passwordHash));
 
 //Get user id   
 	$userIdQuery = $db->prepare("SELECT Userid FROM Users WHERE Username=:username");
@@ -51,6 +52,8 @@ $insertQuery->execute(array(':username' => $username, ':password' => $password))
 else {
 	$noInfo = true;
 }
+
+$db = null;
 ?>
 <html>
 <head>
