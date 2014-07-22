@@ -8,8 +8,7 @@ exit();
 }
 
 
-//include 'databaseConnection.php';
-include 'pdotest.php'; 
+include 'databaseConnection.php';
 
 $username = $_SESSION['un'];
 $userid = $_SESSION['userid'];
@@ -39,14 +38,66 @@ $moochQuery->execute(array(':userid' => $userid));
 
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+   
+    <!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+
 <title>Main Page</title>
+<!-- link rel="stylesheet" type="text/css" href="mainStyle.css" -->
 <link rel="stylesheet" type="text/css" href="mainStyle.css">
 </head>
 <body>
-<header><a href="main.php">Moochtracker</a></header>
-<a id="logout" href="logout.php">Logout</a>
+
+	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	
+	<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+	
+    <!-- Latest compiled and minified JavaScript -->
+	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+	<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+					<span class="sr-only">Toggle navigation</span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+					<span class="icon-bar"></span>
+				</button>	
+		
+			</div>
+		
+			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+				<ul class ="nav navbar-nav navbar-right">
+					<li class="active"><a href="#">Main Page</a></li>
+					<li><a href="addmooch.php">Add A Mooch</a></li>
+					<li><a href="logout.php">Logout</a></li>
+				</ul>
+			</div>
+			<div class="text-center">
+				<h1>MOOCHTRACKER</h1>
+			</div>
+		</div>
+	</nav>
+	
+	
+
+
 <h2>Mooches</h2>
 <?php
 
@@ -60,6 +111,7 @@ else {
 	echo "<table id='mooches'> \n";
 	$i=1;
 
+	//Loop through each of user's mooches and print out table
 	while($moochRow != null) {
 	$moochid= $moochRow["MoochID"];
 
@@ -81,7 +133,7 @@ else {
 	
 	
 	//Print out mooch list
-	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onmouseover='this.style.borderWidth=\"thick\"' onmouseout='if(prevMooch!=this.id)this.style.borderWidth=\"thin\"' onclick= 'displayTransactions(" . $moochRow['MoochID'] . ", " . "\"" . $moochRow['Name'] . "\", \"mooch" . $i . "\")' ><span class='moochName'>" . $moochRow['Name'] . "</span><span class='moochTotal'>" . $sumStr . "</span></td></tr> \n";
+	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onmouseover='this.style.borderWidth=\"thick\"' onmouseout='if(prevMooch!=this.id)this.style.borderWidth=\"thin\"' onclick= 'displayTransactions(" . $moochRow['MoochID'] . ", \"mooch" . $i . "\")' ><span class='moochName'>" . htmlspecialchars($moochRow['Name']) . "</span><span class='moochTotal'>" . $sumStr . "</span></td></tr> \n";
 	
 	$moochRow = $moochResult[$i];
 	$i = $i + 1;
@@ -93,7 +145,6 @@ else {
 $db = null;
 ?>
 <br>
-<a href="addmooch.php">Add a mooch</a>
 <span id="moochInfo"> 
 </span>
 <script>
@@ -113,10 +164,10 @@ $db = null;
 	var prevMooch = null;
 	
 	//mooch onclick function
-	function displayTransactions(x , z, moochNum) {
+	function displayTransactions(x , moochNum) {
 	xmlhttp.open("POST", "moochInfo.php", true);
 	xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-	xmlhttp.send("MoochID=" + x + "&UserID=" + <?php echo $userid; ?> + "&MoochName=" + z);
+	xmlhttp.send("MoochID=" + x + "&UserID=" + <?php echo $userid; ?>);
 	
 	
 	if(prevMooch != null)
