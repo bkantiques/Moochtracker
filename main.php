@@ -16,7 +16,7 @@ $userid = $_SESSION['userid'];
 //If post data for adding transaction is filled out, add it to database
 if(($_POST["giveOrReceive"]=="give" || $_POST["giveOrReceive"]=="receive") && is_numeric($_POST["amount"]) && is_numeric($_SESSION["MoochID"])) {
 	$giveOrReceive = $_POST["giveOrReceive"];
-	$amount = $_POST["amount"];
+	$amount = $_POST["amount"] * 100;
 	if($giveOrReceive == "receive")
 		$amount *= -1;
 	$moochID = $_SESSION["MoochID"];
@@ -53,7 +53,6 @@ $moochQuery->execute(array(':userid' => $userid));
 
 <title>Main Page</title>
 <!-- link rel="stylesheet" type="text/css" href="mainStyle.css" -->
-<link rel="stylesheet" type="text/css" href="mainStyle.css">
 </head>
 <body>
 
@@ -70,35 +69,20 @@ $moochQuery->execute(array(':userid' => $userid));
     <!-- Latest compiled and minified JavaScript -->
 	<script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 
-	<nav class="navbar navbar-inverse navbar-static-top" role="navigation">
-		<div class="container-fluid">
-			<div class="navbar-header">
-				<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-					<span class="sr-only">Toggle navigation</span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-					<span class="icon-bar"></span>
-				</button>	
-		
+	<div class="container-fluid">	
+		<div class="page header">
+			<h1 class="text-center" id="logo">MOOCHTRACKER</h1>
+			<div class="text-right hidden-xs hidden-sm">
+				<a class="btn btn-default" href="logout.php">LOGOUT</a>
 			</div>
-		
-			<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-				<ul class ="nav navbar-nav navbar-right">
-					<li class="active"><a href="#">Main Page</a></li>
-					<li><a href="addmooch.php">Add A Mooch</a></li>
-					<li><a href="logout.php">Logout</a></li>
-				</ul>
-			</div>
-			<div class="text-center">
-				<h1>MOOCHTRACKER</h1>
+			<div class="text-center visible-xs visible-sm">
+				<a class="btn btn-default" href="logout.php">LOGOUT</a>
 			</div>
 		</div>
-	</nav>
-	
+
 	
 
 
-<h2>Mooches</h2>
 <?php
 
 
@@ -107,8 +91,9 @@ $moochRow = $moochResult[0];
 if($moochRow == null)
 	echo "<p>You have no mooches</p> \n";
 else {
-	echo "<p>Click on a mooch to view or add to transaction history</p>";
-	echo "<table id='mooches'> \n";
+	echo "<div class='col-lg-3 col-md-4 col-sm-5'>";
+	echo "<h3>MOOCHES<br><small>Click on a mooch to view history</small></h3>";
+	echo "<table class='table table-hover table-bordered' id='mooches'> \n";
 	$i=1;
 
 	//Loop through each of user's mooches and print out table
@@ -123,30 +108,34 @@ else {
 	$sumRow = $sumResult[0];
 	$sum = 0;
 	if($sumRow)
-		$sum += $sumRow['SUM(Amount)'];
+		$sum += ($sumRow['SUM(Amount)'])/100;
+		
 	
-	if($sum < 0)
-		$sumStr = "Is owed \$" . abs($sum);
-	else
-		$sumStr = "Owes \$" . $sum;
+	if($sum < 0) {
+		$sum = number_format(abs($sum), 2);
+		$sumStr = "Is owed \$" . $sum;}
+	else {
+		$sum = number_format($sum, 2);
+		$sumStr = "Owes \$" . $sum;}
+		
 
 	
 	
 	//Print out mooch list
-	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onmouseover='this.style.borderWidth=\"thick\"' onmouseout='if(prevMooch!=this.id)this.style.borderWidth=\"thin\"' onclick= 'displayTransactions(" . $moochRow['MoochID'] . ", \"mooch" . $i . "\")' ><span class='moochName'>" . htmlspecialchars($moochRow['Name']) . "</span><span class='moochTotal'>" . $sumStr . "</span></td></tr> \n";
+	echo "<tr><td class='moochNameTotal' id='mooch" . $i . "' onclick= 'displayTransactions(" . $moochRow['MoochID'] . ", \"mooch" . $i . "\")' ><span class='moochName'>" . htmlspecialchars($moochRow['Name']) . "</span><span class='moochTotal pull-right'>" . $sumStr . "</span></td></tr> \n";
 	
 	$moochRow = $moochResult[$i];
 	$i = $i + 1;
 	}
 	echo "</table> \n";
+	echo "<a class='btn btn-primary btn-block' href='addmooch.php'>ADD A MOOCH</a></div> \n";
 }
 
 //Close database link
 $db = null;
 ?>
-<br>
-<span id="moochInfo"> 
-</span>
+<div id="moochInfo" class="col-lg-offset-1 col-md-offset-1 col-sm-offset-1 col-lg-8 col-md-7 col-sm-6"> 
+</div>
 <script>
 
 	//initialize xmlhttp
@@ -171,10 +160,10 @@ $db = null;
 	
 	
 	if(prevMooch != null)
-		document.getElementById(prevMooch).style.borderWidth = "thin";
+		document.getElementById(prevMooch).className = "moochNameTotal";
 	prevMooch = moochNum;
 	
-	document.getElementById(moochNum).style.borderWidth = "thick";
+	document.getElementById(moochNum).className = "moochNameTotal active";
 }
 
 //function when ajax response is ready
@@ -187,6 +176,6 @@ xmlhttp.onreadystatechange=function()
 	}
 
 </script>
-
+</div>
 </body>
 </html>
